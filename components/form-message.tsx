@@ -1,24 +1,37 @@
-export type Message =
-  | { success: string }
-  | { error: string }
-  | { message: string };
+'use client'
 
-export function FormMessage({ message }: { message: Message }) {
+import { useSearchParams } from 'next/navigation'
+import { Alert, AlertDescription } from './ui/alert'
+import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+export type Message = {
+  type: 'success' | 'error'
+  message: string
+}
+
+export function FormMessage() {
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
+  const success = searchParams.get('success')
+
+  if (!error && !success) return null
+
   return (
-    <div className="flex flex-col gap-2 w-full max-w-md text-sm">
-      {"success" in message && (
-        <div className="text-foreground border-l-2 border-foreground px-4">
-          {message.success}
-        </div>
-      )}
-      {"error" in message && (
-        <div className="text-destructive-foreground border-l-2 border-destructive-foreground px-4">
-          {message.error}
-        </div>
-      )}
-      {"message" in message && (
-        <div className="text-foreground border-l-2 px-4">{message.message}</div>
-      )}
-    </div>
-  );
+    <Alert
+      className={cn('text-sm', {
+        'bg-destructive/15 text-destructive': error,
+        'bg-emerald-500/15 text-emerald-500': success,
+      })}
+    >
+      <div className="flex gap-2 items-center">
+        {error ? (
+          <AlertCircle className="h-4 w-4" />
+        ) : (
+          <CheckCircle2 className="h-4 w-4" />
+        )}
+        <AlertDescription>{error || success}</AlertDescription>
+      </div>
+    </Alert>
+  )
 }
