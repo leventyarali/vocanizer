@@ -26,7 +26,7 @@ import { WordType } from '@/lib/types/word';
 
 const formSchema = z.object({
   word_type_id: z.number().min(1, 'Kelime türü seçilmelidir'),
-  cefr_level: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const),
+  cefr_level: z.enum(['NONE', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const),
 });
 
 export type WordTypeFormData = z.infer<typeof formSchema>;
@@ -63,7 +63,7 @@ export function WordTypeForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       word_type_id: undefined,
-      cefr_level: 'A1',
+      cefr_level: 'NONE',
       ...defaultValues,
     },
   });
@@ -115,6 +115,7 @@ export function WordTypeForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="NONE">Belirtilmemiş</SelectItem>
                   <SelectItem value="A1">A1</SelectItem>
                   <SelectItem value="A2">A2</SelectItem>
                   <SelectItem value="B1">B1</SelectItem>

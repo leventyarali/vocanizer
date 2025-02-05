@@ -1,66 +1,64 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { DataTable } from "./data-table";
-import { columns } from "./columns";
+import Link from "next/link";
+import { TextTable } from "@/components/content/texts/text-table";
+import { getTexts } from "@/lib/api/texts";
+import { TextSearch } from "@/components/content/texts/text-search";
 
-interface Text {
-  id: string;
-  title: string;
-  content: string;
-  cefr_level: string;
-  difficulty_score: number;
-  created_at: string;
+function TextsError({ error }: { error: Error }) {
+  return (
+    <Card className="border-destructive">
+      <CardHeader>
+        <CardTitle className="text-destructive">Hata Oluştu</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-destructive">{error.message}</p>
+      </CardContent>
+    </Card>
+  );
 }
 
-export default function TextsPage() {
-  const [texts, setTexts] = useState<Text[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+export default async function TextListPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const search = typeof searchParams.search === 'string' ? searchParams.search : undefined
+  const { data, error } = await getTexts(1, 20, { title: search })
 
-  useEffect(() => {
-    fetchTexts();
-  }, []);
+  if (error) {
+    return <TextsError error={error} />
+  }
 
-  const fetchTexts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("texts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setTexts(data || []);
-    } catch (error) {
-      console.error("Error fetching texts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (!data) {
+    return <TextsError error={new Error("Metinler yüklenirken bir hata oluştu")} />
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Metinler</h2>
-        <Button onClick={() => router.push("/admin/content/texts/new")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Metin
-        </Button>
-      </div>
-
-      <DataTable columns={columns} data={texts} />
+    <div className="container py-6 space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-2xl font-bold">Metinler</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Sistemdeki tüm metinleri yönetin
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/admin/content/texts/create" className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" />
+              Yeni Metin
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center py-4">
+            <TextSearch />
+          </div>
+          <TextTable data={data} />
+        </CardContent>
+      </Card>
     </div>
   );
 } 

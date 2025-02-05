@@ -832,11 +832,12 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           difficulty_level: number | null
+          cefr_level: Database["public"]["Enums"]["cefr_level"] | null
           id: string
           language_id: string
+          original_sentence_id: string | null
           source_text_id: string | null
           text: string
-          translation: string | null
           updated_at: string | null
         }
         Insert: {
@@ -845,11 +846,12 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           difficulty_level?: number | null
+          cefr_level?: Database["public"]["Enums"]["cefr_level"] | null
           id?: string
           language_id: string
+          original_sentence_id?: string | null
           source_text_id?: string | null
           text: string
-          translation?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -858,11 +860,12 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           difficulty_level?: number | null
+          cefr_level?: Database["public"]["Enums"]["cefr_level"] | null
           id?: string
           language_id?: string
+          original_sentence_id?: string | null
           source_text_id?: string | null
           text?: string
-          translation?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -871,6 +874,13 @@ export type Database = {
             columns: ["language_id"]
             isOneToOne: false
             referencedRelation: "languages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sentences_original_sentence_id_fkey"
+            columns: ["original_sentence_id"]
+            isOneToOne: false
+            referencedRelation: "sentences"
             referencedColumns: ["id"]
           },
           {
@@ -984,6 +994,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      temp_import: {
+        Row: {
+          cefr_level: string | null
+          language_id: string | null
+          link: string | null
+          word: string | null
+          word_lists: string | null
+          word_type_id: string | null
+        }
+        Insert: {
+          cefr_level?: string | null
+          language_id?: string | null
+          link?: string | null
+          word?: string | null
+          word_lists?: string | null
+          word_type_id?: string | null
+        }
+        Update: {
+          cefr_level?: string | null
+          language_id?: string | null
+          link?: string | null
+          word?: string | null
+          word_lists?: string | null
+          word_type_id?: string | null
+        }
+        Relationships: []
       }
       texts: {
         Row: {

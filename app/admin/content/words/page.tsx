@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { getWords } from "@/lib/api/words";
-import { WordSearch } from "./word-search";
-import { WordTable } from "./word-table";
+import { WordTable } from "@/components/content/words/word-table";
+import { WordSearch } from "@/components/content/words/word-search";
 
 function WordsError({ error }: { error: Error }) {
   return (
@@ -24,36 +24,39 @@ export default async function WordListPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const page = Number(searchParams.page) || 1;
-  const limit = Number(searchParams.limit) || 10;
-  const search = typeof searchParams.search === 'string' ? searchParams.search : '';
-
-  const { data, error, metadata } = await getWords(page, limit, { word: search });
+  const search = typeof searchParams.word === 'string' ? searchParams.word : undefined;
+  const { data, error } = await getWords(1, 10, { word: search });
 
   if (error) {
     return <WordsError error={error} />;
+  }
+
+  if (!data) {
+    return <WordsError error={new Error("Kelimeler yüklenirken bir hata oluştu")} />;
   }
 
   return (
     <div className="container py-6 space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-2xl font-bold">Kelimeler</CardTitle>
+          <div>
+            <CardTitle className="text-2xl font-bold">Kelimeler</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Sistemdeki tüm kelimeleri yönetin
+            </p>
+          </div>
           <Button asChild>
-            <Link href="/admin/content/words/new" className="flex items-center">
+            <Link href="/admin/content/words/create" className="flex items-center">
               <Plus className="mr-2 h-4 w-4" />
               Yeni Kelime
             </Link>
           </Button>
         </CardHeader>
         <CardContent>
-          <WordSearch defaultValue={search} />
-          <WordTable
-            data={data || []}
-            pageIndex={page - 1}
-            pageSize={limit}
-            pageCount={metadata?.totalPages || 0}
-          />
+          <div className="flex items-center py-4">
+            <WordSearch />
+          </div>
+          <WordTable data={data} />
         </CardContent>
       </Card>
     </div>

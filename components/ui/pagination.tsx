@@ -1,18 +1,69 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 import { cn } from "../../lib/utils"
 import { ButtonProps, buttonVariants } from "./button"
 
-const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
-  <nav
-    role="navigation"
-    aria-label="pagination"
-    className={cn("mx-auto flex w-full justify-center", className)}
-    {...props}
-  />
-)
-Pagination.displayName = "Pagination"
+interface CustomPaginationProps {
+  pageCount: number
+  currentPage: number
+  baseUrl: string
+}
+
+export function CustomPagination({ pageCount, currentPage, baseUrl }: CustomPaginationProps) {
+  const pages = Array.from({ length: pageCount }, (_, i) => i + 1)
+  
+  return (
+    <div className="flex items-center justify-center space-x-2">
+      <Button
+        variant="outline"
+        size="icon"
+        asChild
+        disabled={currentPage === 1}
+      >
+        <Link
+          href={`${baseUrl}?page=${currentPage - 1}`}
+          aria-label="Önceki sayfa"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Link>
+      </Button>
+      
+      {pages.map((page) => (
+        <Button
+          key={page}
+          variant={currentPage === page ? "default" : "outline"}
+          size="icon"
+          asChild
+        >
+          <Link
+            href={`${baseUrl}?page=${page}`}
+            aria-label={`Sayfa ${page}`}
+            aria-current={currentPage === page ? "page" : undefined}
+          >
+            {page}
+          </Link>
+        </Button>
+      ))}
+      
+      <Button
+        variant="outline"
+        size="icon"
+        asChild
+        disabled={currentPage === pageCount}
+      >
+        <Link
+          href={`${baseUrl}?page=${currentPage + 1}`}
+          aria-label="Sonraki sayfa"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </div>
+  )
+}
 
 const PaginationContent = React.forwardRef<
   HTMLUListElement,

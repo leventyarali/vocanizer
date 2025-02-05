@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
 import {
   ColumnDef,
+  ColumnFiltersState,
+  SortingState,
   flexRender,
   getCoreRowModel,
-  useReactTable,
+  getFilteredRowModel,
   getPaginationRowModel,
-  SortingState,
   getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
+
 import {
   Table,
   TableBody,
@@ -18,48 +21,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./select";
-
-interface DataTablePaginationProps {
-  pageIndex: number;
-  pageSize: number;
-  pageCount: number;
-  onPageChange: (pageIndex: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
-}
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  loading?: boolean;
-  onRowClick?: (row: TData) => void;
-  pagination?: DataTablePaginationProps;
+  searchKey: string;
+  searchPlaceholder?: string;
   pageCount?: number;
+  onPaginationChange?: (page: number) => void;
+  currentPage?: number;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  loading = false,
-  onRowClick,
-  pagination,
+  searchKey,
+  searchPlaceholder = "Ara...",
   pageCount,
+  onPaginationChange,
+  currentPage = 1,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data,
@@ -68,23 +54,29 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
+      columnFilters,
     },
-    manualPagination: !!pagination,
     pageCount: pageCount,
+    manualPagination: true,
   });
-
-  if (loading) {
-    return (
-      <div className="w-full h-96 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={searchPlaceholder}
+          value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn(searchKey)?.setFilterValue(event.target.value)
+          }
+          className="pl-8 max-w-sm"
+        />
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -111,14 +103,13 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={cn(
-                    onRowClick && "cursor-pointer hover:bg-muted/50"
-                  )}
-                  onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -129,81 +120,31 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Veri bulunamadı.
+                  Sonuç bulunamadı.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-
-      {pagination && (
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center space-x-6 lg:space-x-8">
-            <div className="flex items-center space-x-2">
-              <p className="text-sm font-medium">Sayfa başına</p>
-              <Select
-                value={`${pagination.pageSize}`}
-                onValueChange={(value) => {
-                  pagination.onPageSizeChange(Number(value));
-                }}
-              >
-                <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue placeholder={pagination.pageSize} />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-              Sayfa {pagination.pageIndex + 1} / {pagination.pageCount}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
-                onClick={() => pagination.onPageChange(0)}
-                disabled={pagination.pageIndex === 0}
-              >
-                <span className="sr-only">İlk sayfa</span>
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-8 w-8 p-0"
-                onClick={() => pagination.onPageChange(pagination.pageIndex - 1)}
-                disabled={pagination.pageIndex === 0}
-              >
-                <span className="sr-only">Önceki sayfa</span>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-8 w-8 p-0"
-                onClick={() => pagination.onPageChange(pagination.pageIndex + 1)}
-                disabled={pagination.pageIndex === pagination.pageCount - 1}
-              >
-                <span className="sr-only">Sonraki sayfa</span>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
-                onClick={() => pagination.onPageChange(pagination.pageCount - 1)}
-                disabled={pagination.pageIndex === pagination.pageCount - 1}
-              >
-                <span className="sr-only">Son sayfa</span>
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="flex items-center justify-end space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPaginationChange?.(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Önceki
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPaginationChange?.(currentPage + 1)}
+          disabled={currentPage === pageCount}
+        >
+          Sonraki
+        </Button>
+      </div>
     </div>
   );
 } 
